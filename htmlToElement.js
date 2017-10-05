@@ -4,7 +4,6 @@ import htmlparser from 'htmlparser2-without-node-native';
 import entities from 'entities';
 
 import AutoSizedImage from './AutoSizedImage';
-import colors from '../../app/style/color.style';
 
 const defaultOpts = {
   lineBreak: '\n',
@@ -102,10 +101,13 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         const customStyle = inheritedStyle(parent);
         const isParentCaption = parent && parent.name === 'figcaption';
         const isParentBlockquote = parent && parent.parent && parent.parent.name === 'blockquote';
+        const isParentLi = parent && parent.name === 'li';
 
         let specialStyle = null;
         if (isParentBlockquote) {
           specialStyle = inheritedStyle({name: 'bloquoteItem'});
+        } else if (isParentLi) {
+          specialStyle = inheritedStyle({name: 'liItem'});
         }
 
         return (
@@ -141,6 +143,7 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         if (opts.addLineBreaks) {
           switch (node.name) {
           case 'pre':
+          case 'footer':
             linebreakBefore = opts.lineBreak;
             break;
           case 'p':
@@ -173,9 +176,9 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
             </TextComponent>);
           } else if (parent.name === 'ul') {
             listItemPrefix = (<TextComponent style={[defaultStyle, customStyle]}>
-              {/* <View style={inheritedStyle({name: 'bullet'})} /> */}
               <TextComponent style={inheritedStyle({name: 'bullet'})}>{opts.bullet}</TextComponent>
             </TextComponent>);
+            // listItemPrefix = <View style={inheritedStyle({name: 'bullet'})} />
           }
           linebreakAfter = opts.lineBreak;
         }
@@ -187,6 +190,78 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         }
 
         const {NodeComponent, styles} = opts;
+
+
+        if (node.name === 'blockquote') {
+          return <View style={{borderLeftWidth: 5, borderLeftColor: '#4dbfbf', paddingHorizontal: 15, paddingVertical: 10,}} key={index + '123123'}>
+              <NodeComponent
+              {...opts.nodeComponentProps}
+              key={index}
+              onPress={linkPressHandler}
+              style={[
+                !node.parent ? styles[node.name] : null,
+                specialStyle
+              ]}
+              onLongPress={linkLongPressHandler}
+            >
+              {linebreakBefore}
+              {listItemPrefix}
+              {domToElement(node.children, node)}
+              {linebreakAfter}
+            </NodeComponent>
+          </View>
+        }
+
+        if (node.name === 'ul' || node.name === 'ol') {
+          return <View
+            style={[
+              !node.parent ? styles[node.name] : null,
+              specialStyle,
+              {paddingHorizontal: 10, paddingTop: 10}
+            ]}
+            >
+              {/* <View style={{flexDirection: 'row', marginBottom: 10}}>
+                  <Text>{'\u2022'}</Text>
+                    <Text style={{flex: 1, paddingLeft: 5}}>qwodjwq odjqw doiwqjdoiqwje wiqod jowqi diowq jdoiwq doiwqj doiqw doiqw diowq djiwq doqwjdoqwjdo qwjdo jqwo djowq</Text>
+              </View>
+              <View style={{flexDirection: 'row', marginBottom: 10}}>
+                  <Text>{'\u2022'}</Text>
+                    <Text style={{flex: 1, paddingLeft: 5}}>qwodjwq odjqw doiwqjdoiqwje wiqod jowqi diowq jdoiwq doiwqj doiqw doiqw diowq djiwq doqwjdoqwjdo qwjdo jqwo djowq</Text>
+              </View> */}
+              {domToElement(node.children, node)}
+            </View>;
+
+          // return <View
+          //   {...opts.nodeComponentProps}
+          //   key={index}
+          //   onPress={linkPressHandler}
+          //   style={[
+          //     !node.parent ? styles[node.name] : null,
+          //     specialStyle
+          //   ]}
+          //   onLongPress={linkLongPressHandler}
+          // >
+          //   {linebreakBefore}
+          //   {listItemPrefix}
+          //   {domToElement(node.children, node)}
+          //   {linebreakAfter}
+          // </View>
+        }
+
+        if (node.name === 'li') {
+          return <View
+            style={[
+              !node.parent ? styles[node.name] : null,
+              specialStyle,
+              {flexDirection: 'row', marginBottom: 10}
+            ]}
+          >
+            {listItemPrefix}
+            <Text style={{flex: 1, paddingLeft: 5}}>
+              {domToElement(node.children, node)}
+            </Text>
+          </View>
+        }
 
         return (
           <NodeComponent
