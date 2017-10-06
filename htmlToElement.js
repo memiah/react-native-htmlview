@@ -94,12 +94,12 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         const defaultStyle = opts.textComponentProps ? opts.textComponentProps.style : null;
         const customStyle = inheritedStyle(parent);
         const text = parent && parent.name === 'figcaption' ? (node.data && node.data.toUpperCase()) : node.data;
-
+        const liStyle = parent && parent.name === 'li' ? inheritedStyle({name: 'itemText'}) : {};
         return (
           <TextComponent
             {...opts.textComponentProps}
             key={index}
-            style={[defaultStyle, customStyle]}
+            style={[defaultStyle, customStyle, liStyle]}
           >
             {entities.decodeHTML(text)}
           </TextComponent>
@@ -154,64 +154,34 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
 
         const {NodeComponent, styles} = opts;
 
-        if (node.name === 'ul' || node.name === 'ol') {
-          return <View
-            style={[
-              !node.parent ? styles[node.name] : null,
-            ]}
-            >
-              {domToElement(node.children, node)}
-            </View>;
-        }
-
-        if (node.name === 'li') {
-          return <View
-            style={[
-              !node.parent ? styles[node.name] : null,
-              {flexDirection: 'row', marginBottom: 10}
-            ]}
-          >
-            <TextComponent style={inheritedStyle({name: parent.name === 'ol' ? 'listNumber' : 'listBullet'})}>
-              {parent.name === 'ol' ? `${orderedListCounter++}.` : opts.bullet}
-            </TextComponent>
-            <TextComponent style={inheritedStyle({name: 'itemText'})}>
-              {domToElement(node.children, node)}
-            </TextComponent>
-          </View>
-        }
-
-        if (node.name === 'figure') {
-          return <View
-            style={[
-              !node.parent ? styles[node.name] : null,
-            ]}
-          >
-            {domToElement(node.children, node)}
-          </View>
-        }
-
-        if (node.name === 'blockquote') {
-          return <View style={!node.parent ? styles[node.name] : null} key={index}>
-              <NodeComponent
-              {...opts.nodeComponentProps}
-              key={index}
-              onPress={linkPressHandler}
-              style={[
-                !node.parent ? styles[node.name] : null,
-                inheritedStyle({name: 'bloquoteItem'})
-              ]}
-              onLongPress={linkLongPressHandler}
-            >
-              {linebreakBefore}
-              {domToElement(node.children, node)}
-              {linebreakAfter}
-            </NodeComponent>
-          </View>
-        }
-
         const children = [linebreakBefore, domToElement(node.children, node), linebreakAfter];
+        let hasView = false;
 
-        const el = <NodeComponent
+        if (node.name === 'ul' || node.name === 'ol' || node.name === 'figure' || node.name === 'blockquote') {
+          hasView = true;
+          children = domToElement(node.children, node);
+        } else if (node.name === 'li') {
+          hasView = true;
+          children = [
+            <TextComponent key={`${index}-1`} style={inheritedStyle({name: parent.name === 'ol' ? 'listNumber' : 'listBullet'})}>
+              {parent.name === 'ol' ? `${orderedListCounter++}.` : opts.bullet}
+            </TextComponent>,
+            <TextComponent key={`${index}-2`} style={inheritedStyle({name: 'itemText'})}>
+              {domToElement(node.children, node)}
+            </TextComponent>
+          ];
+        }
+
+        if (hasView) {
+          return <View
+            style={!node.parent || node.name === 'li' ? styles[node.name] : null}
+            key={index}
+          >
+            {children}
+          </View>
+        }
+
+        return <NodeComponent
           {...opts.nodeComponentProps}
           key={index}
           onPress={linkPressHandler}
@@ -222,12 +192,6 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         >
           {children}
         </NodeComponent>;
-
-        // if (hasView) {
-        //   el = <View style={!node.parent ? styles[node.name] : null} key={index}>{el}</View>
-        // }
-
-        return el;
       }
     });
   }
