@@ -17,7 +17,9 @@ const defaultOpts = {
 
 const Img = props => {
   let widthAtt =
-    parseInt(props.attribs['width'], 10) || parseInt(props.attribs['data-width'], 10) || 0;
+    parseInt(props.attribs['width'], 10) ||
+    parseInt(props.attribs['data-width'], 10) ||
+    0;
   const height =
     parseInt(props.attribs['height'], 10) ||
     parseInt(props.attribs['data-height'], 10) ||
@@ -35,7 +37,8 @@ const Img = props => {
     width: widthAtt,
     maxWidth: (width - 20),
     height: height || 200,
-    resizeMode
+    resizeMode,
+    marginBottom: 10
   };
 
   const source = {
@@ -44,11 +47,14 @@ const Img = props => {
     height,
   };
 
-  if (props.attribs.src) {
-    return <AutoSizedImage source={source} style={imgStyle} />;
-  } else {
-    return <Text>-</Text>
+  // if no src is passed, add generic image
+  if (!props.attribs.src) {
+    imgStyle.width = 16;
+    imgStyle.height = 16;
+    source.uri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAWRJREFUOI21k7FLAnEUx9/vFF08rzjw8oImTZoi6A9odwpcIhyCxubW3Kr1FCIcRM4llRKCBtdybLbi5+Lw87w47DjJBvU1xC/0upIb+m7v8b6f33vvxyOINKvrjVPbdhTwIUmKmNns7jEplc4NxxnG4nHlxQ+g1zOTkiT2g44zjKmq8pzJHG34AdTrhTZj/ZRAiDBBBOLHDACACIQQYSL4Nbr1fwBE6vkriFRCpN8jewIQ6V61eveASPdd+XSr9XgNAEAIoCcAke4Ui1cXhvGa0LRyBZHmEKmKSHP5fPm23e5sEZJAXh90mTd1vVEZjT4kntO08oksLx9Y1mANACAcDr3/2AFvp9m8vxwM7FV3V9zspbkRul2W+q2Qazweh2bjuRFUVelY1tvKXwBZXjLmAIjTAA/S6cPtRR3MCnEaCIpixGTMXK/VCk98F4uNQBgzk9Go2Cdf53xzZtvDmJ/X+Tl/ArQ4nue4vQorAAAAAElFTkSuQmCC';
   }
+
+  return <AutoSizedImage source={source} style={imgStyle} />;
 };
 
 export default function htmlToElement(rawHtml, customOpts = {}, done) {
@@ -56,18 +62,6 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
     ...defaultOpts,
     ...customOpts,
   };
-
-  function cleanLink(link) {
-    if (link) {
-      if (link.startsWith("'") || link.startsWith('"') || link.startsWith('”')) {
-        link = link.slice(1);
-      }
-      if (link.endsWith("'") || link.endsWith('"') || link.endsWith('”')) {
-        link = link.slice(0, link.length - 1);
-      }
-    }
-    return link;
-  }
 
   function inheritedStyle(parent) {
     if (!parent) return null;
@@ -99,24 +93,15 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
       if (node.type === 'text') {
         const defaultStyle = opts.textComponentProps ? opts.textComponentProps.style : null;
         const customStyle = inheritedStyle(parent);
-        const isParentCaption = parent && parent.name === 'figcaption';
-        const isParentBlockquote = parent && parent.parent && parent.parent.name === 'blockquote';
-        const isParentLi = parent && parent.name === 'li';
-
-        let specialStyle = null;
-        if (isParentBlockquote) {
-          specialStyle = inheritedStyle({name: 'bloquoteItem'});
-        } else if (isParentLi) {
-          specialStyle = inheritedStyle({name: 'liItem'});
-        }
+        const text = parent && parent.name === 'figcaption' ? (node.data && node.data.toUpperCase()) : node.data;
 
         return (
           <TextComponent
             {...opts.textComponentProps}
             key={index}
-            style={[defaultStyle, customStyle, specialStyle]}
+            style={[defaultStyle, customStyle]}
           >
-            {entities.decodeHTML(isParentCaption ? (node.data && node.data.toUpperCase()) : node.data)}
+            {entities.decodeHTML(text)}
           </TextComponent>
         );
       }
@@ -129,7 +114,9 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         let linkPressHandler = null;
         let linkLongPressHandler = null;
         if (node.name === 'a' && node.attribs && node.attribs.href) {
-          const link = cleanLink(entities.decodeHTML(node.attribs.href));
+          let link = entities.decodeHTML(node.attribs.href);
+          // remove not expected codes
+          link = link && link.replace(/^'|"|”/, '').replace(/$'|"|”/, '');
           linkPressHandler = () =>
             opts.linkHandler(link);
           if (opts.linkLongPressHandler) {
@@ -165,121 +152,82 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
           }
         }
 
-        let listItemPrefix = null;
-        if (node.name === 'li') {
-          const defaultStyle = opts.textComponentProps ? opts.textComponentProps.style : null;
-          const customStyle = inheritedStyle(parent);
-
-          if (parent.name === 'ol') {
-            listItemPrefix = (<TextComponent style={[defaultStyle, customStyle]}>
-              {`${orderedListCounter++}. `}
-            </TextComponent>);
-          } else if (parent.name === 'ul') {
-            listItemPrefix = (<TextComponent style={[defaultStyle, customStyle]}>
-              <TextComponent style={inheritedStyle({name: 'bullet'})}>{opts.bullet}</TextComponent>
-            </TextComponent>);
-            // listItemPrefix = <View style={inheritedStyle({name: 'bullet'})} />
-          }
-          linebreakAfter = opts.lineBreak;
-        }
-
-        let specialStyle = null;
-        if (node.name === 'blockquote') {
-          // listItemPrefix = <View style={inheritedStyle({name: 'bloquoteItem'})} />
-          specialStyle = inheritedStyle({name: 'bloquoteItem'});
-        }
-
         const {NodeComponent, styles} = opts;
 
+        if (node.name === 'ul' || node.name === 'ol') {
+          return <View
+            style={[
+              !node.parent ? styles[node.name] : null,
+            ]}
+            >
+              {domToElement(node.children, node)}
+            </View>;
+        }
+
+        if (node.name === 'li') {
+          return <View
+            style={[
+              !node.parent ? styles[node.name] : null,
+              {flexDirection: 'row', marginBottom: 10}
+            ]}
+          >
+            <TextComponent style={inheritedStyle({name: parent.name === 'ol' ? 'listNumber' : 'listBullet'})}>
+              {parent.name === 'ol' ? `${orderedListCounter++}.` : opts.bullet}
+            </TextComponent>
+            <TextComponent style={inheritedStyle({name: 'itemText'})}>
+              {domToElement(node.children, node)}
+            </TextComponent>
+          </View>
+        }
+
+        if (node.name === 'figure') {
+          return <View
+            style={[
+              !node.parent ? styles[node.name] : null,
+            ]}
+          >
+            {domToElement(node.children, node)}
+          </View>
+        }
 
         if (node.name === 'blockquote') {
-          return <View style={{borderLeftWidth: 5, borderLeftColor: '#4dbfbf', paddingHorizontal: 15, paddingVertical: 10,}} key={index + '123123'}>
+          return <View style={!node.parent ? styles[node.name] : null} key={index}>
               <NodeComponent
               {...opts.nodeComponentProps}
               key={index}
               onPress={linkPressHandler}
               style={[
                 !node.parent ? styles[node.name] : null,
-                specialStyle
+                inheritedStyle({name: 'bloquoteItem'})
               ]}
               onLongPress={linkLongPressHandler}
             >
               {linebreakBefore}
-              {listItemPrefix}
               {domToElement(node.children, node)}
               {linebreakAfter}
             </NodeComponent>
           </View>
         }
 
-        if (node.name === 'ul' || node.name === 'ol') {
-          return <View
-            style={[
-              !node.parent ? styles[node.name] : null,
-              specialStyle,
-              {paddingHorizontal: 10, paddingTop: 10}
-            ]}
-            >
-              {/* <View style={{flexDirection: 'row', marginBottom: 10}}>
-                  <Text>{'\u2022'}</Text>
-                    <Text style={{flex: 1, paddingLeft: 5}}>qwodjwq odjqw doiwqjdoiqwje wiqod jowqi diowq jdoiwq doiwqj doiqw doiqw diowq djiwq doqwjdoqwjdo qwjdo jqwo djowq</Text>
-              </View>
-              <View style={{flexDirection: 'row', marginBottom: 10}}>
-                  <Text>{'\u2022'}</Text>
-                    <Text style={{flex: 1, paddingLeft: 5}}>qwodjwq odjqw doiwqjdoiqwje wiqod jowqi diowq jdoiwq doiwqj doiqw doiqw diowq djiwq doqwjdoqwjdo qwjdo jqwo djowq</Text>
-              </View> */}
-              {domToElement(node.children, node)}
-            </View>;
+        const children = [linebreakBefore, domToElement(node.children, node), linebreakAfter];
 
-          // return <View
-          //   {...opts.nodeComponentProps}
-          //   key={index}
-          //   onPress={linkPressHandler}
-          //   style={[
-          //     !node.parent ? styles[node.name] : null,
-          //     specialStyle
-          //   ]}
-          //   onLongPress={linkLongPressHandler}
-          // >
-          //   {linebreakBefore}
-          //   {listItemPrefix}
-          //   {domToElement(node.children, node)}
-          //   {linebreakAfter}
-          // </View>
-        }
+        const el = <NodeComponent
+          {...opts.nodeComponentProps}
+          key={index}
+          onPress={linkPressHandler}
+          style={[
+            !node.parent ? styles[node.name] : null,
+          ]}
+          onLongPress={linkLongPressHandler}
+        >
+          {children}
+        </NodeComponent>;
 
-        if (node.name === 'li') {
-          return <View
-            style={[
-              !node.parent ? styles[node.name] : null,
-              specialStyle,
-              {flexDirection: 'row', marginBottom: 10}
-            ]}
-          >
-            {listItemPrefix}
-            <Text style={{flex: 1, paddingLeft: 5}}>
-              {domToElement(node.children, node)}
-            </Text>
-          </View>
-        }
+        // if (hasView) {
+        //   el = <View style={!node.parent ? styles[node.name] : null} key={index}>{el}</View>
+        // }
 
-        return (
-          <NodeComponent
-            {...opts.nodeComponentProps}
-            key={index}
-            onPress={linkPressHandler}
-            style={[
-              !node.parent ? styles[node.name] : null,
-              specialStyle
-            ]}
-            onLongPress={linkLongPressHandler}
-          >
-            {linebreakBefore}
-            {listItemPrefix}
-            {domToElement(node.children, node)}
-            {linebreakAfter}
-          </NodeComponent>
-        );
+        return el;
       }
     });
   }
