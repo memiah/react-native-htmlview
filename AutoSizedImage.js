@@ -18,6 +18,7 @@ export default class AutoSizedImage extends PureComponent {
       // You must specify a width and height for the image %s
       width: this.props.style.width || 1,
       height: this.props.style.height || 1,
+      resizeMode: 'stretch'
     };
   }
 
@@ -29,6 +30,14 @@ export default class AutoSizedImage extends PureComponent {
     Image.getSize(this.props.source.uri, (w, h) => {
       this.setState({width: w, height: h});
     });
+  }
+
+  // force image to resize and fits to the current width and height
+  // hack to solve load image load
+  refreshImage() {
+    this.setState({
+      resizeMode: 'cover'
+    })
   }
 
   render() {
@@ -51,6 +60,6 @@ export default class AutoSizedImage extends PureComponent {
       source = Object.assign(source, this.props.source, finalSize);
     }
 
-    return <Image style={style} source={source} />;
+    return <Image resizeMode={this.state.resizeMode} onLoad={this.refreshImage.bind(this)} style={style} source={source} />;
   }
 }
