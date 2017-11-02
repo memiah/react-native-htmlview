@@ -16,35 +16,16 @@ const defaultOpts = {
 };
 
 const Img = props => {
-  let widthAtt =
-    parseInt(props.attribs['width'], 10) ||
-    parseInt(props.attribs['data-width'], 10) ||
-    0;
-  const height =
-    parseInt(props.attribs['height'], 10) ||
-    parseInt(props.attribs['data-height'], 10) ||
-    0;
-
   const { width } = Dimensions.get('window');
-  const resizeMode = null;
-
-  if (!widthAtt) {
-    widthAtt = (width - 20);
-    resizeMode: 'contain'
-  }
-
   const imgStyle = {
-    width: widthAtt,
     maxWidth: (width - 20),
-    height: height || 200,
-    resizeMode,
+    resizeMode: 'cover',
     marginBottom: 10
   };
 
   const source = {
     uri: props.attribs.src,
-    width: widthAtt,
-    height,
+    width,
   };
 
   // if no src is passed, add generic image
