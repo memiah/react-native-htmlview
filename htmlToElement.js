@@ -18,9 +18,8 @@ const defaultOpts = {
 const Img = props => {
   const { width } = Dimensions.get('window');
   const imgStyle = {
-    maxWidth: (width - 20),
+    maxWidth: width,
     resizeMode: 'cover',
-    marginBottom: 10
   };
 
   const source = {
