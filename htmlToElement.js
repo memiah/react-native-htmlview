@@ -134,7 +134,7 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
 
         const {NodeComponent, styles} = opts;
 
-        const children = [linebreakBefore, domToElement(node.children, node), linebreakAfter];
+        let children = [linebreakBefore, domToElement(node.children, node), linebreakAfter];
         let hasView = false;
 
         if (node.name === 'ul' || node.name === 'ol' || node.name === 'figure' || node.name === 'blockquote') {
@@ -157,6 +157,9 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
                 domToElement([node.children[1]], node)
               ]
             )
+          }
+          if (opts.addLineBreaks && index < list.length - 1) {
+            linebreakAfter = opts.lineBreak;
           }
         }
 
