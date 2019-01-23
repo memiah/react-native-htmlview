@@ -1,9 +1,11 @@
 import React from 'react';
-import {StyleSheet, Text, Dimensions, View} from 'react-native';
+import {StyleSheet, Text, Dimensions, View, WebView} from 'react-native';
 import htmlparser from 'htmlparser2-without-node-native';
 import entities from 'entities';
 
 import AutoSizedImage from './AutoSizedImage';
+
+const {width: _width} = Dimensions.get('window');
 
 const defaultOpts = {
   lineBreak: '\n',
@@ -16,15 +18,14 @@ const defaultOpts = {
 };
 
 const Img = props => {
-  const { width } = Dimensions.get('window');
   const imgStyle = {
-    maxWidth: width,
+    maxWidth: _width,
     resizeMode: 'cover',
   };
 
   const source = {
     uri: props.attribs.src,
-    width,
+    width: _width,
   };
 
   // if no src is passed, add generic image
@@ -89,6 +90,27 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
       if (node.type === 'tag') {
         if (node.name === 'img') {
           return <Img key={index} attribs={node.attribs} />;
+        } else if (node.name === 'iframe') {
+          const ratio = node.attribs.ratio ? Number(node.attribs.ratio) : 0.75;
+          const paddingHorizontal = opts && opts.styles && opts.styles.iframe && opts.styles.iframe.paddingHorizontal ? Number(opts.styles.iframe.paddingHorizontal) : 15;
+          const width = node.attribs.width ? Number(node.attribs.width) : _width - 2 * paddingHorizontal;
+          const height = node.attribs.height ? Number(node.attribs.height) : width * ratio;
+          const style = {
+            width,
+            height,
+          };
+          return <WebView
+            key={index}
+            ref={(ref) => { this[node.attribs.src] = ref; }}
+            style={style}
+            source={{uri: node.attribs.src}}
+            onNavigationStateChange={(event) => {
+              if (event.url !== node.attribs.src) {
+                this[node.attribs.src].stopLoading();
+                // Linking.openURL(event.url);
+              }
+            }}
+          />;
         }
 
         let linkPressHandler = null;
