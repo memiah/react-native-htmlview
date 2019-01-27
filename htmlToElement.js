@@ -4,6 +4,7 @@ import htmlparser from 'htmlparser2-without-node-native';
 import entities from 'entities';
 
 import AutoSizedImage from './AutoSizedImage';
+import Iframe from 'react-native-htmlview/component/Iframe';
 
 const {width: _width} = Dimensions.get('window');
 
@@ -91,26 +92,7 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         if (node.name === 'img') {
           return <Img key={index} attribs={node.attribs} />;
         } else if (node.name === 'iframe') {
-          const ratio = node.attribs.ratio ? Number(node.attribs.ratio) : 0.75;
-          const paddingHorizontal = opts && opts.styles && opts.styles.iframe && opts.styles.iframe.paddingHorizontal ? Number(opts.styles.iframe.paddingHorizontal) : 15;
-          const width = node.attribs.width ? Number(node.attribs.width) : _width - 2 * paddingHorizontal;
-          const height = node.attribs.height ? Number(node.attribs.height) : width * ratio;
-          const style = {
-            width,
-            height,
-          };
-          return <WebView
-            key={index}
-            ref={(ref) => { this[node.attribs.src] = ref; }}
-            style={style}
-            source={{uri: node.attribs.src}}
-            onNavigationStateChange={(event) => {
-              if (event.url !== node.attribs.src) {
-                this[node.attribs.src].stopLoading();
-                // Linking.openURL(event.url);
-              }
-            }}
-          />;
+          return <Iframe key={index} attribs={node.attribs} opts={opts} index={index}/>
         }
 
         let linkPressHandler = null;
