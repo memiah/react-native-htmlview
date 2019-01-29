@@ -141,7 +141,7 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
         let children = [linebreakBefore, domToElement(node.children, node), linebreakAfter];
         let hasView = false;
 
-        if (node.name === 'ul' || node.name === 'ol' || node.name === 'figure' || node.name === 'blockquote') {
+        if (node.name === 'ul' || node.name === 'ol' || node.name === 'figure' || node.name === 'blockquote' || node.name === 'div') {
           hasView = true;
           children = domToElement(node.children, node);
         } else if (node.name === 'li') {
