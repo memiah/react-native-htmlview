@@ -105,7 +105,7 @@ export default class MyWebView extends Component {
           javaScriptEnabled={true}
           automaticallyAdjustContentInsets={true}
           {...this.props}
-          style={[this.props.style, {height: _h + 35}]}
+          style={[this.props.style, {height: _h}]}
         />
         <TouchableHighlight
           onPress={this.openLink.bind(this)}
