@@ -1,7 +1,13 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import htmlToElement from './htmlToElement';
-import {Linking, Platform, StyleSheet, View, ViewPropTypes} from 'react-native';
+import {
+  Linking,
+  Platform,
+  StyleSheet,
+  View,
+  ViewPropTypes,
+} from 'react-native';
 
 const boldStyle = {fontWeight: '500'};
 const italicStyle = {fontStyle: 'italic'};
@@ -54,9 +60,17 @@ class HtmlView extends PureComponent {
     this.startHtmlRender(this.props.value);
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (this.props.value !== nextProps.value || this.props.stylesheet !== nextProps.stylesheet || this.props.textComponentProps !== nextProps.textComponentProps) {
-      this.startHtmlRender(nextProps.value, nextProps.stylesheet, nextProps.textComponentProps);
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    if (
+      this.props.value !== nextProps.value ||
+      this.props.stylesheet !== nextProps.stylesheet ||
+      this.props.textComponentProps !== nextProps.textComponentProps
+    ) {
+      this.startHtmlRender(
+        nextProps.value,
+        nextProps.stylesheet,
+        nextProps.textComponentProps
+      );
     }
   }
 
@@ -86,7 +100,7 @@ class HtmlView extends PureComponent {
       customRenderer: renderNode,
     };
 
-    htmlToElementOptKeys.forEach(key => {
+    htmlToElementOptKeys.forEach((key) => {
       if (typeof this.props[key] !== 'undefined') {
         opts[key] = this.props[key];
       }
@@ -112,20 +126,12 @@ class HtmlView extends PureComponent {
     const {element} = this.state;
     if (element) {
       return (
-        <RootComponent
-          {...this.props.rootComponentProps}
-          style={style}
-        >
+        <RootComponent {...this.props.rootComponentProps} style={style}>
           {element}
         </RootComponent>
       );
     }
-    return (
-      <RootComponent
-        {...this.props.rootComponentProps}
-        style={style}
-      />
-    );
+    return <RootComponent {...this.props.rootComponentProps} style={style} />;
   }
 }
 
@@ -151,10 +157,10 @@ HtmlView.propTypes = {
 
 HtmlView.defaultProps = {
   addLineBreaks: true,
-  onLinkPress: url => Linking.openURL(url),
+  onLinkPress: (url) => Linking.openURL(url),
   onLinkLongPress: null,
   onError: console.error.bind(console),
-  RootComponent: element => <View {...element} />, // eslint-disable-line react/display-name
+  RootComponent: (element) => <View {...element} />, // eslint-disable-line react/display-name
 };
 
 export default HtmlView;
