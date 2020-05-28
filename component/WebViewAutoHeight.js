@@ -11,28 +11,32 @@
  * @version v1.0.2
  */
 
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {
   View,
   WebView,
   Platform,
   Linking,
-  TouchableHighlight
+  TouchableHighlight,
 } from 'react-native';
 
 const injectedScript = function() {
   function waitForBridge() {
-    if (window.postMessage.length !== 1){
+    if (window.postMessage.length !== 1) {
       setTimeout(waitForBridge, 200);
     } else {
       const post = postMessage;
       const postMsg = () => {
         post(
-          JSON.stringify({height: Math.max(document.documentElement.clientHeight || 0,
-            document.documentElement.scrollHeight  || 0,
-            document.body.clientHeight || 0,
-            document.body.scrollHeight || 0)})
-        )
+          JSON.stringify({
+            height: Math.max(
+              document.documentElement.clientHeight || 0,
+              document.documentElement.scrollHeight || 0,
+              document.body.clientHeight || 0,
+              document.body.scrollHeight || 0
+            ),
+          })
+        );
       };
       // window.onclick = function(e) {
       //   e.preventDefault();
@@ -49,18 +53,18 @@ const injectedScript = function() {
 
 export default class MyWebView extends Component {
   state = {
-    webViewHeight: Number
+    webViewHeight: Number,
   };
 
   static defaultProps = {
-      autoHeight: true,
-  }
+    autoHeight: true,
+  };
 
-  constructor (props) {
+  constructor(props) {
     super(props);
     this.state = {
-      webViewHeight: this.props.defaultHeight
-    }
+      webViewHeight: this.props.defaultHeight,
+    };
 
     this._onMessage = this._onMessage.bind(this);
   }
@@ -69,7 +73,7 @@ export default class MyWebView extends Component {
     const data = e.nativeEvent.data && JSON.parse(e.nativeEvent.data);
     if (data && data.height) {
       this.setState({
-        webViewHeight: parseInt(data.height)
+        webViewHeight: parseInt(data.height),
       });
     } else if (data && data.link) {
       this.openLink();
@@ -90,15 +94,26 @@ export default class MyWebView extends Component {
     }
   }
 
-  render () {
-    const _h = this.props.autoHeight ? this.state.webViewHeight : this.props.defaultHeight;
-    const androidScript = 'window.postMessage = String(Object.hasOwnProperty).replace(\'hasOwnProperty\', \'postMessage\');' +
-    '(' + String(injectedScript) + ')();';
-    const iosScript = '(' + String(injectedScript) + ')();' + 'window.postMessage = String(Object.hasOwnProperty).replace(\'hasOwnProperty\', \'postMessage\');';
+  render() {
+    const _h = this.props.autoHeight
+      ? this.state.webViewHeight
+      : this.props.defaultHeight;
+    const androidScript =
+      "window.postMessage = String(Object.hasOwnProperty).replace('hasOwnProperty', 'postMessage');" +
+      '(' +
+      String(injectedScript) +
+      ')();';
+    const iosScript =
+      '(' +
+      String(injectedScript) +
+      ')();' +
+      "window.postMessage = String(Object.hasOwnProperty).replace('hasOwnProperty', 'postMessage');";
     return (
       <View>
         <WebView
-          ref={(ref) => { this.webview = ref; }}
+          ref={ref => {
+            this.webview = ref;
+          }}
           injectedJavaScript={Platform.OS === 'ios' ? iosScript : androidScript}
           scrollEnabled={this.props.scrollEnabled || false}
           onMessage={this._onMessage}
@@ -115,6 +130,6 @@ export default class MyWebView extends Component {
           <View />
         </TouchableHighlight>
       </View>
-    )
+    );
   }
 }
